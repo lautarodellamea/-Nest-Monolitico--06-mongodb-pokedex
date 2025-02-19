@@ -29,13 +29,17 @@ export class PokemonService {
 
     } catch (error) {
 
+      /*  
       if (error.code === 11000) {
-        throw new BadRequestException(`Pokemon exists in db ${JSON.stringify(error.keyValue)}`)
-      }
+         throw new BadRequestException(`Pokemon exists in db ${JSON.stringify(error.keyValue)}`)
+       }
+ 
+       console.log(error);
+ 
+       throw new InternalServerErrorException('Can not create pokemon - check server logs') 
+       */
 
-      console.log(error);
-
-      throw new InternalServerErrorException('Can not create pokemon - check server logs')
+      this.handleExceptions(error)
     }
 
 
@@ -83,11 +87,44 @@ export class PokemonService {
       updatePokemonDto.name = updatePokemonDto.name.toLowerCase()
     }
 
-    const updatedPokemon = await pokemon.updateOne(updatePokemonDto, { new: true }) // si no pongo el new true no me va a devolver el dato actualizado, sino que me va a devolver el dato anterior a actualizar, pero si lo actualiza 
-    return updatedPokemon
+    try {
+
+      await pokemon.updateOne(updatePokemonDto)
+
+      return { ...pokemon.toJSON(), ...updatePokemonDto }
+
+    } catch (error) {
+
+
+      /* 
+       if (error.code === 11000) {
+         throw new BadRequestException(`Pokemon exists in db ${JSON.stringify(error.keyValue)}`)
+       }
+ 
+       console.log(error);
+ 
+       throw new InternalServerErrorException('Can not create pokemon - check server logs') 
+       */
+
+      this.handleExceptions(error)
+
+    }
+
   }
 
   remove(id: number) {
     return `This action removes a #${id} pokemon`;
+  }
+
+
+  // hacemos este metodo para hacer codigo reusable y centralizar el manejo de errores
+  private handleExceptions(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(`Pokemon exists in db ${JSON.stringify(error.keyValue)}`)
+    }
+
+    console.log(error);
+
+    throw new InternalServerErrorException('Can not create pokemon - check server logs')
   }
 }
